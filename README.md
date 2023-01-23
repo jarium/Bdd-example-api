@@ -27,6 +27,9 @@ After a successful import, the database will be ready.
 After installing the docker container, dependencies and setting up our mysql database, the api service will be available at http://localhost
 
 ## Behat Tests
+Important: Before running tests, change the TEST_ENV constant in "config.php" file to true. After testing is done, change it to false again.
+This will make time based tests achievable by freezing time to TEST_TIME.
+
 ```bash
 $ docker exec -it bdd-example-api-php-1 /bin/bash
 $ vendor/bin/behat -f pretty
