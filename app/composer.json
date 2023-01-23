@@ -1,0 +1,20 @@
+{
+    "name": "user/new",
+    "autoload": {
+        "psr-4": {
+            "app\\": "./"
+        }
+    },
+    "authors": [
+        {
+            "name": "Efe Buyuk",
+            "email": "efebyk97@gmail.com"
+        }
+    ],
+    "require-dev": {
+        "behat/behat": "^3.12"
+    },
+    "require": {
+        "guzzlehttp/guzzle": "^7.2.0"
+    }
+}
