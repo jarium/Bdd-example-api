@@ -24,7 +24,7 @@ class Logger
         $this->setup();
 
         $this->fileAdress = fopen('../Logs/' . $this->logFile, 'a');
-        fwrite($this->fileAdress, "Ip:[" . $this->ip . "] Date:[" . date("Y-m-d H:i:s") . "] Level:[" . $level . "] Log:[" . $message . "]" . PHP_EOL);
+        fwrite($this->fileAdress, "Ip:[" . $this->ip . "] Date:[" . date("Y-m-d H:i:s") . "] Level:[" . $level . "] Log:[" . REQUEST_ID . " " . $message . "]" . PHP_EOL);
         fclose($this->fileAdress);
     }
 }

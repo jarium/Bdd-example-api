@@ -61,7 +61,7 @@ class Request
 
     private function logRequest(): void
     {
-        $log = REQUEST_ID . " Request: " . $this->requestMethod . " " . $this->requestUri . ", ";
+        $log = "Request: " . $this->requestMethod . " " . $this->requestUri . ", ";
         $log .= "Headers: ";
 
         foreach ($this->headers as $header => $value) {

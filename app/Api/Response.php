@@ -26,7 +26,7 @@ class Response
 
     public static function sendErrorResponse(ApiException $e): void
     {
-        (new Logger())->log(LoggerHelper::getThrowableDetails($e), 'WARNING');
+        (new Logger())->log('Exception caught!' . LoggerHelper::getThrowableDetails($e), 'WARNING');
 
         (new self())
             ->setHttpStatusCode($e->getCode())
@@ -37,7 +37,7 @@ class Response
 
     public static function sendInternalErrorResponse(Throwable $t): void
     {
-        (new Logger())->log(LoggerHelper::getThrowableDetails($t), 'EMERGENCY');
+        (new Logger())->log('Throwable caught!' . LoggerHelper::getThrowableDetails($t), 'EMERGENCY');
 
         (new self())
             ->setHttpStatusCode(500)
@@ -171,6 +171,6 @@ class Response
 
     private function logResponse(array $response): void
     {
-        (new Logger())->log(REQUEST_ID . ' Response: ' . json_encode($response), 'INFO');
+        (new Logger())->log('Response: ' . json_encode($response), 'INFO');
     }
 }
