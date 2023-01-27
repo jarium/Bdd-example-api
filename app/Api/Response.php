@@ -1,8 +1,11 @@
 <?php
 
-namespace app\Builder;
+namespace app\Api;
 
+use app\Exception\ApiException;
+use app\helpers\LoggerHelper;
 use app\Logger\Logger;
+use Throwable;
 
 class Response
 {
@@ -11,6 +14,37 @@ class Response
     private ?array $data = null;
     private ?string $errorCode = null;
     private ?string $errorMessage = null;
+
+    public static function sendSuccessResponse(?array $data = null): void
+    {
+        (new self())
+            ->setHttpStatusCode(200)
+            ->successResponse()
+            ->setData($data)
+            ->send();
+    }
+
+    public static function sendErrorResponse(ApiException $e): void
+    {
+        (new Logger())->log(LoggerHelper::getThrowableDetails($e), 'WARNING');
+
+        (new self())
+            ->setHttpStatusCode($e->getCode())
+            ->setErrorCode($e->getCustomErrorCode())
+            ->setErrorMessage($e->getMessage())
+            ->send();
+    }
+
+    public static function sendInternalErrorResponse(Throwable $t): void
+    {
+        (new Logger())->log(LoggerHelper::getThrowableDetails($t), 'EMERGENCY');
+
+        (new self())
+            ->setHttpStatusCode(500)
+            ->setErrorCode(ConstantError::INTERNAL_ERROR)
+            ->setErrorMessage('Internal server error')
+            ->send();
+    }
 
     /**
      * @return string
@@ -125,7 +159,7 @@ class Response
         $this->sendResponse($response);
     }
 
-    private function sendResponse(array $response)
+    private function sendResponse(array $response): void
     {
         $this->logResponse($response);
 

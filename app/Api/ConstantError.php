@@ -25,5 +25,5 @@ class ConstantError
 
     //Internal Errors
     public const INTERNAL_ERROR = '500000';
-    public const INTERNAL_MAINTENANCE_ERROR = '500001';
+    public const MAINTENANCE_ERROR = '503000';
 }

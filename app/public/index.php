@@ -1,18 +1,16 @@
 <?php
 
-require_once __DIR__.'/../vendor/autoload.php';
-require_once __DIR__.'/../config.php';
+require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../config.php';
 
-use app\Api\ConstantError;
-use app\Builder\Response;
+use app\Api\Response;
 use app\controllers\ApiController;
-use app\helpers\LoggerHelper;
-use app\Logger\Logger;
+use app\Exception\ApiException;
 use app\Middleware\CreatePostsMiddleware;
 use app\Router;
 
 try {
-    define ('REQUEST_ID', uniqid('-REQ-', true));
+    define('REQUEST_ID', uniqid('-REQ-', true));
 
     $router = new Router();
 
@@ -21,11 +19,8 @@ try {
         ->post('/api/create-post', [ApiController::class, 'createPosts']);
 
     $router->resolve();
+} catch (ApiException $e) {
+    Response::sendErrorResponse($e);
 } catch (Throwable $t) {
-    (new Logger())->log(LoggerHelper::getThrowableDetails($t), 'EMERGENCY');
-    (new Response())
-        ->setHttpStatusCode(500)
-        ->setErrorCode(ConstantError::INTERNAL_ERROR)
-        ->setErrorMessage('Internal server error')
-        ->send();
+    Response::sendInternalErrorResponse($t);
 }

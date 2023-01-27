@@ -3,9 +3,10 @@
 namespace app;
 
 use app\Api\ConstantError;
-use app\Builder\Response;
+use app\Api\Request;
+use app\Exception\MaintenanceException;
+use app\Exception\NotFoundException;
 use app\Middleware\BaseMiddleware;
-use app\models\Common\Request;
 use ReflectionClass;
 use ReflectionException;
 
@@ -21,16 +22,14 @@ class Router
 
     public Database $db;
 
+    /**
+     * @throws MaintenanceException
+     */
     public function __construct()
     {
         if (MAINTENANCE) {
             new BaseMiddleware(false); //Base middleware logs the request
-
-            (new Response())
-                ->setHttpStatusCode(503)
-                ->setErrorCode(ConstantError::INTERNAL_MAINTENANCE_ERROR)
-                ->setErrorMessage('maintenance, please visit us later')
-                ->send();
+            throw new MaintenanceException();
         }
 
         $this->db = new Database();
@@ -47,24 +46,29 @@ class Router
         return $this;
     }
 
-    public function get($url, $fn, $tokenRequired = true)
+    public function get($url, $fn, $tokenRequired = true): void
     {
         $this->getRoutes[$url] = $fn;
         $this->tokenRequiredByRoutes[$url] = $tokenRequired;
     }
 
-    public function post($url, $fn, $tokenRequired = true)
+    public function post($url, $fn, $tokenRequired = true): void
     {
         $this->postRoutes[$url] = $fn;
         $this->tokenRequiredByRoutes[$url] = $tokenRequired;
     }
 
-    public function resolve()
+    /**
+     * @throws NotFoundException
+     */
+    public function resolve(): void
     {
         $currentUrl = $_SERVER['REQUEST_URI'] ?? '/';
+
         if (strpos($currentUrl, '?') !== false) {
             $currentUrl = substr($currentUrl, 0, strpos($currentUrl, '?'));
         }
+
         $method = $_SERVER['REQUEST_METHOD'];
 
         if ($method === 'GET') {
@@ -88,12 +92,10 @@ class Router
             call_user_func($fn, $this);
         } else {
             new BaseMiddleware(false); //Base middleware logs the request
-
-            (new Response())
-                ->setHttpStatusCode(404)
-                ->setErrorCode(ConstantError::NOT_FOUND_ROUTE)
-                ->setErrorMessage('route not found!')
-                ->send();
+            throw new NotFoundException(
+                'route not found!',
+                ConstantError::NOT_FOUND_ROUTE
+            );
         }
     }
 }

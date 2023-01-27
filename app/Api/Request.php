@@ -1,6 +1,6 @@
 <?php
 
-namespace app\models\Common;
+namespace app\Api;
 
 use app\models\ApiToken;
 

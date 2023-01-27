@@ -3,16 +3,20 @@
 namespace app\Middleware;
 
 use app\Api\ConstantError;
-use app\Builder\Response;
+use app\Api\Request;
+use app\Exception\BadRequestException;
+use app\Exception\UnauthorizedException;
 use app\helpers\TimeHelper;
 use app\Logger\Logger;
 use app\models\ApiToken;
-use app\models\Common\Request;
 
 class BaseMiddleware
 {
     public Request $request;
 
+    /**
+     * @throws BadRequestException
+     */
     public function __construct(bool $tokenRequired)
     {
         $headers = getallheaders();
@@ -27,11 +31,10 @@ class BaseMiddleware
         $this->logRequest();
 
         if ($body === null) {
-            (new Response())
-                ->setHttpStatusCode(400)
-                ->setErrorCode(ConstantError::PARAM_ERROR_INVALID_JSON)
-                ->setErrorMessage('Invalid json')
-                ->send();
+            throw new BadRequestException(
+                'Invalid json',
+                ConstantError::PARAM_ERROR_INVALID_JSON
+            );
         }
 
         $this->trimBodyData();
@@ -76,53 +79,51 @@ class BaseMiddleware
         return $data;
     }
 
+    /**
+     * @throws UnauthorizedException
+     */
     private function checkToken(): ApiToken
     {
         $accessKey = $this->request->headers['X-Posts-Token'] ?? null;
 
         if (!$accessKey) {
-            (new Response())
-                ->setHttpStatusCode(401)
-                ->setErrorCode(ConstantError::UNAUTHORIZED_REQUEST_WITHOUT_TOKEN)
-                ->setErrorMessage('Invalid token parameter')
-                ->send();
+            throw new UnauthorizedException(
+                'Invalid token parameter',
+                ConstantError::UNAUTHORIZED_REQUEST_WITHOUT_TOKEN
+            );
         }
 
         $token = ApiToken::findByToken($accessKey);
 
         if (!$token) {
-            (new Response())
-                ->setHttpStatusCode(401)
-                ->setErrorCode(ConstantError::UNAUTHORIZED_INVALID_TOKEN)
-                ->setErrorMessage('Token not found!')
-                ->send();
+            throw new UnauthorizedException(
+                'Token not found!',
+                ConstantError::UNAUTHORIZED_INVALID_TOKEN
+            );
         }
 
         if ($token->status === ApiToken::STATUS_PASSIVE) {
-            (new Response())
-                ->setHttpStatusCode(401)
-                ->setErrorCode(ConstantError::UNAUTHORIZED_PASSIVE_TOKEN)
-                ->setErrorMessage('Invalid token parameter')
-                ->send();
+            throw new UnauthorizedException(
+                'Invalid token parameter',
+                ConstantError::UNAUTHORIZED_PASSIVE_TOKEN
+            );
         }
 
         if ($token->status === ApiToken::STATUS_EXPIRED) {
-            (new Response())
-                ->setHttpStatusCode(401)
-                ->setErrorCode(ConstantError::UNAUTHORIZED_EXPIRED_TOKEN)
-                ->setErrorMessage('Token expired!')
-                ->send();
+            throw new UnauthorizedException(
+                'Token expired!',
+                ConstantError::UNAUTHORIZED_EXPIRED_TOKEN
+            );
         }
 
         if ($token->expiredAt && TimeHelper::now() > $token->expiredAt) {
             $token->status = ApiToken::STATUS_EXPIRED;
             $token->save();
 
-            (new Response())
-                ->setHttpStatusCode(401)
-                ->setErrorCode(ConstantError::UNAUTHORIZED_TOKEN_TIME_EXPIRED)
-                ->setErrorMessage('Token expired!')
-                ->send();
+            throw new UnauthorizedException(
+                'Token expired!',
+                ConstantError::UNAUTHORIZED_TOKEN_TIME_EXPIRED
+            );
         }
 
         return $token;

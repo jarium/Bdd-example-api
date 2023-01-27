@@ -4,16 +4,15 @@ namespace app\Logger;
 
 class Logger
 {
-    private $date;
     private $ip;
     private $logFile;
     private $fileAdress;
 
     public function setup()
     {
-        $this->date = date('Y-m-d');
+        $date = date('Y-m-d');
         $this->ip = $_SERVER['REMOTE_ADDR'];
-        $this->logFile = $this->date . ".log";
+        $this->logFile = $date . ".log";
 
         if (!is_dir("../Logs")) {
             mkdir("../Logs");
