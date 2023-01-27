@@ -4,8 +4,9 @@ namespace app;
 
 use app\Api\ConstantError;
 use app\Api\Request;
-use app\Exception\MaintenanceException;
+use app\Exception\BadRequestException;
 use app\Exception\NotFoundException;
+use app\Exception\UnauthorizedException;
 use app\Middleware\BaseMiddleware;
 use ReflectionClass;
 use ReflectionException;
@@ -20,19 +21,9 @@ class Router
 
     public Request $request;
 
-    public Database $db;
-
-    /**
-     * @throws MaintenanceException
-     */
-    public function __construct()
+    public function __construct(Request $request)
     {
-        if (MAINTENANCE) {
-            new BaseMiddleware(false); //Base middleware logs the request
-            throw new MaintenanceException();
-        }
-
-        $this->db = new Database();
+        $this->request = $request;
     }
 
     /**
@@ -59,39 +50,35 @@ class Router
     }
 
     /**
-     * @throws NotFoundException
+     * @throws NotFoundException|BadRequestException
+     * @throws UnauthorizedException
      */
     public function resolve(): void
     {
-        $currentUrl = $_SERVER['REQUEST_URI'] ?? '/';
-
-        if (strpos($currentUrl, '?') !== false) {
-            $currentUrl = substr($currentUrl, 0, strpos($currentUrl, '?'));
+        if (strpos($this->request->requestUri, '?') !== false) {
+            $this->request->requestUri = substr($this->request->requestUri, 0, strpos($this->request->requestUri, '?'));
         }
 
-        $method = $_SERVER['REQUEST_METHOD'];
-
-        if ($method === 'GET') {
-            $fn = $this->getRoutes[$currentUrl] ?? null;
+        if ($this->request->requestMethod === 'GET') {
+            $fn = $this->getRoutes[$this->request->requestUri] ?? null;
         } else {
-            $fn = $this->postRoutes[$currentUrl] ?? null;
+            $fn = $this->postRoutes[$this->request->requestUri] ?? null;
         }
 
         if ($fn) {
-            $isApiTokenRequired = $this->tokenRequiredByRoutes[$currentUrl];
+            $isApiTokenRequired = $this->tokenRequiredByRoutes[$this->request->requestUri];
             $middlewareClassName = $this->middlewares[ucfirst($fn[1]) . 'Middleware'] ?? null;
 
             if ($middlewareClassName) {
-                $middleware = new $middlewareClassName($isApiTokenRequired);
+                $middleware = new $middlewareClassName($isApiTokenRequired, $this->request);
                 $middleware->handle();
                 $this->request = $middleware->request;
             } else {
-                $this->request = (new BaseMiddleware($isApiTokenRequired))->request;
+                $this->request = (new BaseMiddleware($isApiTokenRequired, $this->request))->request;
             }
 
-            call_user_func($fn, $this);
+            call_user_func($fn, $this->request);
         } else {
-            new BaseMiddleware(false); //Base middleware logs the request
             throw new NotFoundException(
                 'route not found!',
                 ConstantError::NOT_FOUND_ROUTE

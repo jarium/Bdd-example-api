@@ -7,7 +7,6 @@ use app\Api\Request;
 use app\Exception\BadRequestException;
 use app\Exception\UnauthorizedException;
 use app\helpers\TimeHelper;
-use app\Logger\Logger;
 use app\models\ApiToken;
 
 class BaseMiddleware
@@ -15,28 +14,12 @@ class BaseMiddleware
     public Request $request;
 
     /**
-     * @throws BadRequestException
+     * @throws BadRequestException|UnauthorizedException
      */
-    public function __construct(bool $tokenRequired)
+    public function __construct(bool $tokenRequired, Request $request)
     {
-        $headers = getallheaders();
-
-        if (!is_array($headers)) {
-            $headers = [$headers];
-        }
-
-        $body = $this->getJsonBodyAsArray();
-
-        $this->request = new Request($headers, $body ?? []);
-        $this->logRequest();
-
-        if ($body === null) {
-            throw new BadRequestException(
-                'Invalid json',
-                ConstantError::PARAM_ERROR_INVALID_JSON
-            );
-        }
-
+        $this->request = $request;
+        $this->checkRequestBody();
         $this->trimBodyData();
 
         if (!$tokenRequired) {
@@ -45,38 +28,6 @@ class BaseMiddleware
 
         $token = $this->checkToken();
         $this->request->apiToken = $token;
-    }
-
-    private function logRequest(): void
-    {
-        $log = REQUEST_ID . " Request: " . $_SERVER['REQUEST_METHOD'] . " " . $_SERVER['REQUEST_URI'] . ", ";
-        $log .= "Headers: ";
-        foreach ($this->request->headers as $header => $value) {
-            $log .= "$header: $value, ";
-        }
-        $log .= "Body: ";
-        foreach ($this->request->body as $param => $value) {
-            $log .= "$param: $value, ";
-        }
-
-        (new Logger())->log($log, 'INFO');
-    }
-
-    private function getJsonBodyAsArray(): ?array
-    {
-        $json = file_get_contents('php://input');
-
-        if (!$json) {
-            return [];
-        }
-
-        $data = json_decode($json, true);
-
-        if (!$data || json_last_error() !== JSON_ERROR_NONE) {
-            return null;
-        }
-
-        return $data;
     }
 
     /**
@@ -127,6 +78,19 @@ class BaseMiddleware
         }
 
         return $token;
+    }
+
+    /**
+     * @throws BadRequestException
+     */
+    private function checkRequestBody(): void
+    {
+        if ($this->request->body === null) {
+            throw new BadRequestException(
+                'Invalid json',
+                ConstantError::PARAM_ERROR_INVALID_JSON
+            );
+        }
     }
 
     private function trimBodyData(): void
