@@ -23,5 +23,5 @@ define('MAINTENANCE', false); //=> Switch false with true for maintenance mode /
 |--------------------------------------------------------------------------
 */
 
-define ('TEST_ENV', true); //=> Switch false with true for test mode
+define ('TEST_ENV', false); //=> Switch false with true for test mode
 define ('TEST_TIME', '2023-01-22 01:00:00');
