@@ -37,6 +37,7 @@ abstract class AbstractModel
         if (!$model->id) {
             $method = 'create' . $reflect->getShortName();
             self::$db->$method($model);
+            $model->id = self::$db->pdo->lastInsertId();
 
             return;
         }

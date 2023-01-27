@@ -9,6 +9,7 @@ use PDO;
 class Database
 {
     public static Database $db;
+    public PDO $pdo;
 
     private $host = DBHOST;
     private $port = DBPORT;
