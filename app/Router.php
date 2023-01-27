@@ -23,6 +23,16 @@ class Router
 
     public function __construct()
     {
+        if (MAINTENANCE) {
+            new BaseMiddleware(false); //Base middleware logs the request
+
+            (new Response())
+                ->setHttpStatusCode(503)
+                ->setErrorCode(ConstantError::INTERNAL_MAINTENANCE_ERROR)
+                ->setErrorMessage('maintenance, please visit us later')
+                ->send();
+        }
+
         $this->db = new Database();
     }
 
@@ -51,16 +61,6 @@ class Router
 
     public function resolve()
     {
-        if (MAINTENANCE) {
-            new BaseMiddleware(false); //Base middleware logs the request
-
-            (new Response())
-                ->setHttpStatusCode(503)
-                ->setErrorCode(ConstantError::INTERNAL_MAINTENANCE_ERROR)
-                ->setErrorMessage('maintenance, please visit us later')
-                ->send();
-        }
-
         $currentUrl = $_SERVER['REQUEST_URI'] ?? '/';
         if (strpos($currentUrl, '?') !== false) {
             $currentUrl = substr($currentUrl, 0, strpos($currentUrl, '?'));
