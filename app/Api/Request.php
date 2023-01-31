@@ -56,6 +56,10 @@ class Request
             return null;
         }
 
+        if (!is_array($data)) {
+            return [$data];
+        }
+
         return $data;
     }
 
